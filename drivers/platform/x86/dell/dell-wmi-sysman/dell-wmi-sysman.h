@@ -134,26 +134,50 @@ static ssize_t name##_show(struct kobject *kobj, struct kobj_attribute *attr,	\
 	return 0;								\
 }
 
-#define attribute_property_store(curr_val, type)				\
+#define attribute_property_store(curr_val, type) 				\
 static ssize_t curr_val##_store(struct kobject *kobj,				\
 				struct kobj_attribute *attr,			\
 				const char *buf, size_t count)			\
 {										\
-	char *p, *buf_cp;							\
-	int i, ret = -EIO;							\
+	char *pass_buf, *attr_buf = NULL, *fmt, *p, *buf_cp;			\
+	int i, ret = -EIO; 							\
+										\
 	buf_cp = kstrdup(buf, GFP_KERNEL);					\
 	if (!buf_cp)								\
 		return -ENOMEM;							\
 	p = memchr(buf_cp, '\n', count);					\
-										\
 	if (p != NULL)								\
-		*p = '\0';							\
+		*p = '\0';   							\
+										\
+	attr_buf = kzalloc(MAX_BUFF, GFP_KERNEL);  				\
+	if (!attr_buf) {  							\
+		ret = -ENOMEM;  						\
+	}  									\
+										\
+	pass_buf = kzalloc(MAX_BUFF, GFP_KERNEL);  				\
+	if (!pass_buf) {          						\
+		ret = -ENOMEM;   						\
+	}      									\
+										\
+	fmt = kzalloc(32, GFP_KERNEL);  					\
+	if (!fmt) {          							\
+		ret = -ENOMEM;   						\
+	}									\
+	/* parse attribute value and admin password */				\
+	sprintf(fmt, "%%%ds %%%ds", MAX_BUFF - 1, MAX_BUFF - 1);		\
+	if (sscanf(buf_cp, fmt, attr_buf, pass_buf) < 1) { 			\
+		ret = -EINVAL;   						\
+	}	           							\
+	kfree(fmt);								\
+										\
 	i = get_##type##_instance_id(kobj);					\
 	if (i >= 0)								\
-		ret = validate_##type##_input(i, buf_cp);			\
+		ret = validate_##type##_input(i, attr_buf);			\
 	if (!ret)								\
-		ret = set_attribute(kobj->name, buf_cp);			\
-	kfree(buf_cp);								\
+		ret = set_attribute(kobj->name, attr_buf, pass_buf);		\
+	kfree(buf_cp);	  							\
+	kfree(attr_buf);   							\
+	kfree(pass_buf);							\
 	return ret ? ret : count;						\
 }
 
@@ -182,7 +206,7 @@ int populate_po_data(union acpi_object *po_obj, int instance_id, struct kobject 
 int alloc_po_data(void);
 void exit_po_attributes(void);
 
-int set_attribute(const char *a_name, const char *a_value);
+int set_attribute(const char *a_name, const char *a_value, const char *password);
 int set_bios_defaults(u8 defType);
 
 void exit_bios_attr_set_interface(void);

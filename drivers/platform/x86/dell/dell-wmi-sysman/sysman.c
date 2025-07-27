@@ -343,7 +343,7 @@ static int alloc_attributes_data(int attr_type)
  * destroy_attribute_objs() - Free a kset of kobjects
  * @kset: The kset to destroy
  *
- * Fress kobjects created for each attribute_name under attribute type kset
+ * Frees kobjects created for each attribute_name under attribute type kset
  */
 static void destroy_attribute_objs(struct kset *kset)
 {
@@ -384,8 +384,8 @@ static void release_attributes_data(void)
  * @attr_type: The attribute type to initialize
  * @guid: The WMI GUID associated with this type to initialize
  *
- * Initialiaze all 4 types of attributes enumeration, integer, string and password object.
- * Populates each attrbute typ's respective properties under sysfs files
+ * Initialize all 4 types of attributes: enumeration, integer, string and password object.
+ * Populates each attribute type's respective properties under sysfs files
  */
 static int init_bios_attributes(int attr_type, const char *guid)
 {

@@ -47,7 +47,7 @@ static int call_biosattributes_interface(struct wmi_device *wdev, char *in_args,
  *
  * Sets an attribute to new value
  */
-int set_attribute(const char *a_name, const char *a_value)
+int set_attribute(const char *a_name, const char *a_value, const char *password)
 {
 	size_t security_area_size, buffer_size;
 	size_t a_name_size, a_value_size;
@@ -59,6 +59,10 @@ int set_attribute(const char *a_name, const char *a_value)
 		ret = -ENODEV;
 		goto out;
 	}
+
+	/* reset a previously provided admin password */
+	memset(wmi_priv.current_admin_password, '\0', MAX_BUFF);
+	strscpy(wmi_priv.current_admin_password, password, MAX_BUFF);
 
 	/* build/calculate buffer */
 	security_area_size = calculate_security_buffer(wmi_priv.current_admin_password);

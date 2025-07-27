@@ -41,7 +41,7 @@ static ssize_t current_value_show(struct kobject *kobj, struct kobj_attribute *a
  * @buf: Input value
  */
 static int validate_integer_input(int instance_id, char *buf)
-{
+{	
 	int in_val;
 	int ret;
 

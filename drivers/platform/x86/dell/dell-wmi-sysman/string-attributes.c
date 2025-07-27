@@ -41,7 +41,7 @@ static ssize_t current_value_show(struct kobject *kobj, struct kobj_attribute *a
  * @buf: Input value
  */
 static int validate_str_input(int instance_id, const char *buf)
-{
+{	
 	int in_len = strlen(buf);
 
 	if ((in_len < wmi_priv.str_data[instance_id].min_length) ||

@@ -47,7 +47,7 @@ static int validate_enumeration_input(int instance_id, const char *buf)
 				 GFP_KERNEL);
 	if (!options)
 		return -ENOMEM;
-
+	
 	while ((p = strsep(&options, ";")) != NULL) {
 		if (!*p)
 			continue;
