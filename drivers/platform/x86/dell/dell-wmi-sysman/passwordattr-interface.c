@@ -38,7 +38,7 @@ static int call_password_interface(struct wmi_device *wdev, char *in_args, size_
  *
  * Sets the password using plaintext interface
  */
-int set_new_password(const char *password_type, const char *new)
+int set_new_password(const char *password_type, const char *new, const char *curr)
 {
 	size_t password_type_size, current_password_size, new_size;
 	size_t security_area_size, buffer_size;
@@ -51,9 +51,14 @@ int set_new_password(const char *password_type, const char *new)
 		ret = -ENODEV;
 		goto out;
 	}
+
 	if (strcmp(password_type, "Admin") == 0) {
+		memset(wmi_priv.current_admin_password, '\0', MAX_BUFF);
+	strscpy(wmi_priv.current_admin_password, curr, MAX_BUFF);
 		current_password = wmi_priv.current_admin_password;
 	} else if (strcmp(password_type, "System") == 0) {
+		memset(wmi_priv.current_system_password, '\0', MAX_BUFF);
+		strscpy(wmi_priv.current_system_password, curr, MAX_BUFF);
 		current_password = wmi_priv.current_system_password;
 	} else {
 		ret = -EINVAL;
@@ -104,7 +109,9 @@ int set_new_password(const char *password_type, const char *new)
 	else if (ret == -EACCES)
 		dev_err(&wmi_priv.password_attr_wdev->dev, "invalid password\n");
 
-out:
+out:	
+	memset(wmi_priv.current_admin_password, '\0', MAX_BUFF);
+	memset(wmi_priv.current_system_password, '\0', MAX_BUFF);
 	kfree(buffer);
 	mutex_unlock(&wmi_priv.mutex);
 

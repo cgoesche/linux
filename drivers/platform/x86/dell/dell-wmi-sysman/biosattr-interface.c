@@ -98,6 +98,7 @@ int set_attribute(const char *a_name, const char *a_value, const char *password)
 		dev_err(&wmi_priv.bios_attr_wdev->dev, "invalid password\n");
 
 out:
+	memset(wmi_priv.current_admin_password, '\0', MAX_BUFF);
 	kfree(buffer);
 	mutex_unlock(&wmi_priv.mutex);
 	return ret;

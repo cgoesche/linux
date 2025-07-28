@@ -38,42 +38,11 @@ static ssize_t is_enabled_show(struct kobject *kobj, struct kobj_attribute *attr
 
 static struct kobj_attribute po_is_pass_set = __ATTR_RO(is_enabled);
 
-static ssize_t current_password_store(struct kobject *kobj,
-				      struct kobj_attribute *attr,
-				      const char *buf, size_t count)
-{
-	char *target = NULL;
-	int length;
-
-	length = strlen(buf);
-	if (length && buf[length - 1] == '\n')
-		length--;
-
-	/* firmware does verifiation of min/max password length,
-	 * hence only check for not exceeding MAX_BUFF here.
-	 */
-	if (length >= MAX_BUFF)
-		return -EINVAL;
-
-	if (strcmp(kobj->name, "Admin") == 0)
-		target = wmi_priv.current_admin_password;
-	else if (strcmp(kobj->name, "System") == 0)
-		target = wmi_priv.current_system_password;
-	if (!target)
-		return -EIO;
-	memcpy(target, buf, length);
-	target[length] = '\0';
-
-	return count;
-}
-
-static struct kobj_attribute po_current_password = __ATTR_WO(current_password);
-
 static ssize_t new_password_store(struct kobject *kobj,
 				  struct kobj_attribute *attr,
 				  const char *buf, size_t count)
 {
-	char *p, *buf_cp;
+	char *curr_pass_buf, *new_pass_buf = NULL, *fmt, *p, *buf_cp;
 	int ret;
 
 	buf_cp = kstrdup(buf, GFP_KERNEL);
@@ -83,15 +52,39 @@ static ssize_t new_password_store(struct kobject *kobj,
 
 	if (p != NULL)
 		*p = '\0';
-	if (strlen(buf_cp) > MAX_BUFF) {
-		ret = -EINVAL;
+
+	curr_pass_buf = kzalloc(MAX_BUFF, GFP_KERNEL);
+	if (!curr_pass_buf) {
+		ret = -ENOMEM;
 		goto out;
 	}
 
-	ret = set_new_password(kobj->name, buf_cp);
+	new_pass_buf = kzalloc(MAX_BUFF, GFP_KERNEL);
+	if (!new_pass_buf) {
+		ret = -ENOMEM;
+		goto out;
+	}
+	
+	fmt = kzalloc(32, GFP_KERNEL);
+	if (!fmt) {
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	/* parse current and new password */
+	sprintf(fmt, "%%%ds %%%ds", MAX_BUFF - 1, MAX_BUFF - 1);
+	if (sscanf(buf_cp, fmt, new_pass_buf, curr_pass_buf) < 1) {
+		ret = -EINVAL;
+		goto out;
+	}
+	kfree(fmt);
+
+	ret = set_new_password(kobj->name, new_pass_buf, curr_pass_buf);
 
 out:
 	kfree(buf_cp);
+	kfree(curr_pass_buf);
+	kfree(new_pass_buf);
 	return ret ? ret : count;
 }
 
@@ -127,7 +120,6 @@ static struct attribute *po_attrs[] = {
 	&po_is_pass_set.attr,
 	&po_min_pass_length.attr,
 	&po_max_pass_length.attr,
-	&po_current_password.attr,
 	&po_new_password.attr,
 	&po_role.attr,
 	&po_mechanism.attr,
